@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Code originall from https://github.com/pageauc/motion-track/blob/master/motion-track.py
+# Code originally from https://github.com/pageauc/motion-track/blob/master/motion-track.py
 
 print("Loading Please Wait ....")
 

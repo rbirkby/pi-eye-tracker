@@ -2,7 +2,6 @@
 # Display Settings
 # ----------------
 debug = True        # Set to False for no data display
-#show_fps = False    # Show Frames per second
 
 # Camera Settings
 # ---------------
@@ -12,7 +11,6 @@ CAMERA_HFLIP = False  # True=flip camera image horizontally
 CAMERA_VFLIP = False  # True=flip camera image vertically
 CAMERA_ROTATION = 0   # Rotate camera image valid values 0, 90, 180, 270
 CAMERA_FRAMERATE = 25 # default = 25 lower for USB Web Cam. Try different settings
-#FRAME_COUNTER = 1000  # used when show_fps=True  Sets frequency of display
 
 # Motion Track Settings
 # ---------------------
