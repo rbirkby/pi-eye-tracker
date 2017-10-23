@@ -16,4 +16,4 @@ CAMERA_FRAMERATE = 25 # default = 25 lower for USB Web Cam. Try different settin
 # ---------------------
 MIN_AREA = 2       # excludes all contours less than or equal to this Area
 THRESHOLD_SENSITIVITY = 15
-BLUR_SIZE = 3
+BLUR_SIZE = 3   

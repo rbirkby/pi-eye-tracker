@@ -61,7 +61,7 @@ from picamera import PiCamera
 
 if debug:
     logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)-8s %(funcName)-10s %(message)s',
+                    format='%(asctime)s %(levelname)-8s %(funcName)-10s %(message)s\r',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # Color data for OpenCV lines and text
@@ -127,40 +127,6 @@ class PiVideoStream:
 
 GPIO.setmode(GPIO.BCM)
 if BLINK_PIN >= 0: GPIO.setup(BLINK_PIN , GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-
-# ADC stuff ----------------------------------------------------------------
-
-if JOYSTICK_X_IN >= 0 or JOYSTICK_Y_IN >= 0 or PUPIL_IN >= 0:
-    adc      = Adafruit_ADS1x15.ADS1015()
-    adcValue = [0] * 4
-else:
-    adc = None
-
-# Because ADC reads are blocking operations, they normally would slow down
-# the animation loop noticably, especially when reading multiple channels
-# (even when using high data rate settings).  To avoid this, ADC channels
-# are read in a separate thread and stored in the global list adcValue[],
-# which the animation loop can read at its leisure (with immediate results,
-# no slowdown).  Since there's a finite limit to the animation frame rate,
-# we intentionally use a slower data rate (rather than sleep()) to lessen
-# the impact of this thread.  data_rate of 250 w/4 ADC channels provides
-# at most 75 Hz update from the ADC, which is plenty for this task.
-def adcThread(adc, dest):
-    while True:
-        for i in range(len(dest)):
-            # ADC input range is +- 4.096V
-            # ADC output is -2048 to +2047
-            # Analog inputs will be 0 to ~3.3V,
-            # thus 0 to 1649-ish.  Read & clip:
-            n = adc.read_adc(i, gain=1, data_rate=250)
-            if   n <    0: n =    0
-            elif n > 1649: n = 1649
-            dest[i] = n / 1649.0 # Store as 0.0 to 1.0
-
-# Start ADC sampling thread if needed:
-if adc:
-    thread.start_new_thread(adcThread, (adc, adcValue))
 
 
 # Load SVG file, extract paths & convert to point lists --------------------
@@ -413,19 +379,9 @@ def frame(p):
     if motion_found:
         # Do Something here with motion datas
         if debug:
-            logging.info("cx,cy(%3i,%3i) C:%2i  LxW:%ix%i=%i SqPx\r\n" %
+            logging.info("cx,cy(%3i,%3i) C:%2i  LxW:%ix%i=%i SqPx" %
                             (cx ,cy, total_contours, cw, ch, biggest_area))
 
-
-# if JOYSTICK_X_IN >= 0 and JOYSTICK_Y_IN >= 0:
-#     # Eye position from analog inputs
-#     curX = adcValue[JOYSTICK_X_IN]
-#     curY = adcValue[JOYSTICK_Y_IN]
-#     if JOYSTICK_X_FLIP: curX = 1.0 - curX
-#     if JOYSTICK_Y_FLIP: curY = 1.0 - curY
-#     curX = -30.0 + curX * 60.0
-#     curY = -30.0 + curY * 60.0
-    # else :
     # Autonomous eye position
     if isMoving == True:
         if dt <= moveDuration:
@@ -441,18 +397,20 @@ def frame(p):
             curY         = destY
             startTime    = now
             isMoving     = False
-            logging.info('end motion destX,destY(%3i,%3i)\r\n' % (destX, destY))
+            if debug:
+                logging.info('end motion destX,destY(%3i,%3i)' % (destX, destY))
     else:
         if motion_found:
             destX = cx/float(300)
             destY = cy/float(300)
             destX = -30.0 + destX * 60.0
             destY = -30.0 + destY * 60.0
-            moveDuration = 0.1
+            moveDuration = 0.2
             holdDuration = 5
             startTime    = now
             isMoving     = True
-            logging.info('motion found destX,destY(%3i,%3i)\r\n' % (destX, destY))
+            if debug:
+                logging.info('motion found destX,destY(%3i,%3i)' % (destX, destY))
         elif dt >= holdDuration:
             destX        = random.uniform(-30.0, 30.0)
             n            = math.sqrt(900.0 - destX * destX)
@@ -464,7 +422,8 @@ def frame(p):
             holdDuration = random.uniform(0.15, 1.7)            
             startTime    = now
             isMoving     = True
-            logging.info('new random motion destX,destY(%3i,%3i)\r\n' % (destX, destY))
+            if debug:
+                logging.info('new random motion destX,destY(%3i,%3i)\r\n' % (destX, destY))
 
 
     # Regenerate iris geometry only if size changed by >= 1/2 pixel
@@ -654,20 +613,7 @@ cx, cy, cw, ch = 0, 0, 0, 0   # initialize contour center variables
 
 while True:
 
-    if PUPIL_IN >= 0: # Pupil scale from sensor
-        v = adcValue[PUPIL_IN]
-        if PUPIL_IN_FLIP: v = 1.0 - v
-        # If you need to calibrate PUPIL_MIN and MAX,
-        # add a 'print v' here for testing.
-        if   v < PUPIL_MIN: v = PUPIL_MIN
-        elif v > PUPIL_MAX: v = PUPIL_MAX
-        # Scale to 0.0 to 1.0:
-        v = (v - PUPIL_MIN) / (PUPIL_MAX - PUPIL_MIN)
-        if PUPIL_SMOOTH > 0:
-            v = ((currentPupilScale * (PUPIL_SMOOTH - 1) + v) /
-                 PUPIL_SMOOTH)
-        frame(v)
-    else: # Fractal auto pupil scale
-        v = random.random()
-        split(currentPupilScale, v, 4.0, 1.0)
+    # Fractal auto pupil scale
+    v = random.random()
+    split(currentPupilScale, v, 4.0, 1.0)
     currentPupilScale = v
