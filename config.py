@@ -14,6 +14,6 @@ CAMERA_FRAMERATE = 25 # default = 25 lower for USB Web Cam. Try different settin
 
 # Motion Track Settings
 # ---------------------
-MIN_AREA = 200       # excludes all contours less than or equal to this Area
-THRESHOLD_SENSITIVITY = 25
-BLUR_SIZE = 10
+MIN_AREA = 2       # excludes all contours less than or equal to this Area
+THRESHOLD_SENSITIVITY = 15
+BLUR_SIZE = 3

@@ -392,7 +392,8 @@ def frame(p):
     retval, thresholdimage = cv2.threshold( differenceimage, THRESHOLD_SENSITIVITY, 255, cv2.THRESH_BINARY )
     try:
         thresholdimage, contours, hierarchy = cv2.findContours( thresholdimage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE )
-    except:
+    except Exception,e:
+        print(str(e))
         contours, hierarchy = cv2.findContours( thresholdimage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE )
 
     if contours:
@@ -409,55 +410,61 @@ def frame(p):
                 cy = int(y + h/2)   # put circle closer to top
                 cw, ch = w, h
 
-        print(motion_found)
+    if motion_found:
+        # Do Something here with motion datas
+        if debug:
+            logging.info("cx,cy(%3i,%3i) C:%2i  LxW:%ix%i=%i SqPx\r\n" %
+                            (cx ,cy, total_contours, cw, ch, biggest_area))
 
+
+# if JOYSTICK_X_IN >= 0 and JOYSTICK_Y_IN >= 0:
+#     # Eye position from analog inputs
+#     curX = adcValue[JOYSTICK_X_IN]
+#     curY = adcValue[JOYSTICK_Y_IN]
+#     if JOYSTICK_X_FLIP: curX = 1.0 - curX
+#     if JOYSTICK_Y_FLIP: curY = 1.0 - curY
+#     curX = -30.0 + curX * 60.0
+#     curY = -30.0 + curY * 60.0
+    # else :
+    # Autonomous eye position
+    if isMoving == True:
+        if dt <= moveDuration:
+            scale        = (now - startTime) / moveDuration
+            # Ease in/out curve: 3*t^2-2*t^3
+            scale = 3.0 * scale * scale - 2.0 * scale * scale * scale
+            curX         = startX + (destX - startX) * scale
+            curY         = startY + (destY - startY) * scale
+        else:
+            startX       = destX
+            startY       = destY
+            curX         = destX
+            curY         = destY
+            startTime    = now
+            isMoving     = False
+            logging.info('end motion destX,destY(%3i,%3i)\r\n' % (destX, destY))
+    else:
         if motion_found:
-            # Do Something here with motion data
-            # if debug:
-                # logging.info("cx,cy(%3i,%3i) C:%2i  LxW:%ix%i=%i SqPx" %
-                #                 (cx ,cy, total_contours, cw, ch, biggest_area))
-
-            curX = cx/float(300)
-            curY = cy/float(300)
-            curX = -30.0 + curX * 60.0
-            curY = -30.0 + curY * 60.0
-
-    # if JOYSTICK_X_IN >= 0 and JOYSTICK_Y_IN >= 0:
-    #     # Eye position from analog inputs
-    #     curX = adcValue[JOYSTICK_X_IN]
-    #     curY = adcValue[JOYSTICK_Y_IN]
-    #     if JOYSTICK_X_FLIP: curX = 1.0 - curX
-    #     if JOYSTICK_Y_FLIP: curY = 1.0 - curY
-    #     curX = -30.0 + curX * 60.0
-    #     curY = -30.0 + curY * 60.0
-        else :
-            # Autonomous eye position
-            if isMoving == True:
-                if dt <= moveDuration:
-                    scale        = (now - startTime) / moveDuration
-                    # Ease in/out curve: 3*t^2-2*t^3
-                    scale = 3.0 * scale * scale - 2.0 * scale * scale * scale
-                    curX         = startX + (destX - startX) * scale
-                    curY         = startY + (destY - startY) * scale
-                else:
-                    startX       = destX
-                    startY       = destY
-                    curX         = destX
-                    curY         = destY
-                    holdDuration = random.uniform(0.15, 1.7)
-                    startTime    = now
-                    isMoving     = False
-            else:
-                if dt >= holdDuration:
-                    destX        = random.uniform(-30.0, 30.0)
-                    n            = math.sqrt(900.0 - destX * destX)
-                    destY        = random.uniform(-n, n)
-                    # Movement is slower in this version because
-                    # the WorldEye display is big and the eye
-                    # should have some 'mass' to it.
-                    moveDuration = random.uniform(0.12, 0.35)
-                    startTime    = now
-                    isMoving     = True
+            destX = cx/float(300)
+            destY = cy/float(300)
+            destX = -30.0 + destX * 60.0
+            destY = -30.0 + destY * 60.0
+            moveDuration = 0.1
+            holdDuration = 5
+            startTime    = now
+            isMoving     = True
+            logging.info('motion found destX,destY(%3i,%3i)\r\n' % (destX, destY))
+        elif dt >= holdDuration:
+            destX        = random.uniform(-30.0, 30.0)
+            n            = math.sqrt(900.0 - destX * destX)
+            destY        = random.uniform(-n, n)
+            # Movement is slower in this version because
+            # the WorldEye display is big and the eye
+            # should have some 'mass' to it.
+            moveDuration = random.uniform(0.12, 0.35)
+            holdDuration = random.uniform(0.15, 1.7)            
+            startTime    = now
+            isMoving     = True
+            logging.info('new random motion destX,destY(%3i,%3i)\r\n' % (destX, destY))
 
 
     # Regenerate iris geometry only if size changed by >= 1/2 pixel
